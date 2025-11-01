@@ -6,13 +6,14 @@ services:
     ports:
       - "${WEBUI_PORT:-3000}:8080"
     volumes:
-      - open-webui-data:/app/backend/data
-      - open-webui-workspace:/app/backend/workspace
+      # - ${DATA_VOLUME_PATH:-open-webui-data}:/app/backend/data
+      # - ${WORKSPACE_VOLUME_PATH:-open-webui-workspace}:/app/backend/workspace
+      # - ${TEMPORARY_VOLUME_PATH:-/tmp}:/tmp
     environment:
       # Core Configuration
       - WEBUI_SECRET_KEY=${WEBUI_SECRET_KEY}
       - WEBUI_URL=${WEBUI_URL}
-      - DATA_DIR=/app/backend/data
+      - DATA_DIR=${DATA_DIR:-/app/backend/data}
 
       # Model Integration
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
@@ -27,6 +28,9 @@ services:
       - OAUTH_PROVIDER_NAME=${OAUTH_PROVIDER_NAME:-authentik}
       - OPENID_PROVIDER_URL=${OPENID_PROVIDER_URL}
       - OPENID_REDIRECT_URI=${OPENID_REDIRECT_URI}
+
+      # Security
+      - WEBUI_SESSION_COOKIE_SECURE=${WEBUI_SESSION_COOKIE_SECURE:-true}
 
       # Code Interpreter
       - ENABLE_CODE_INTERPRETER=${ENABLE_CODE_INTERPRETER:-true}

@@ -69,19 +69,107 @@ All configuration is managed through the `.env` file. Key variables include:
 | `ENABLE_CODE_INTERPRETER` | Enable Python code execution | `true` |
 | `RAG_EMBEDDING_MODEL` | Model for embeddings | `nomic-embed-text` |
 | `RAG_FILE_MAX_SIZE` | Max upload size in MB | `10` |
+| `WEBUI_SESSION_COOKIE_SECURE` | Enable secure cookies (HTTPS) | `true` |
+| `DATA_VOLUME_PATH` | Custom data directory path (optional) | _(empty = named volume)_ |
+| `WORKSPACE_VOLUME_PATH` | Custom workspace directory path (optional) | _(empty = named volume)_ |
 
 See the [official documentation](https://docs.openwebui.com/getting-started/env-configuration) for all available options.
 
 ### Volumes
 
-The setup uses Docker named volumes for data persistence:
+The setup supports two volume configuration methods:
+
+#### Option 1: Named Volumes (Default - Recommended)
+
+Docker named volumes are used by default for portability across systems:
 
 - `open-webui-data`: Application data, uploads, cache
 - `open-webui-workspace`: User workspace files
+- `/tmp`: Temporary directory (for code interpreter)
 
-To backup your data:
+**Advantages:**
+- Portable across different operating systems
+- Managed by Docker (easier backups with Docker tools)
+- No permission issues
+
+**Backup named volumes:**
 ```bash
+# Backup data volume
 docker run --rm -v open-webui-data:/data -v $(pwd):/backup alpine tar czf /backup/open-webui-data-backup.tar.gz -C /data .
+
+# Backup workspace volume
+docker run --rm -v open-webui-workspace:/data -v $(pwd):/backup alpine tar czf /backup/open-webui-workspace-backup.tar.gz -C /data .
+```
+
+**Restore named volumes:**
+```bash
+# Restore data volume
+docker run --rm -v open-webui-data:/data -v $(pwd):/backup alpine tar xzf /backup/open-webui-data-backup.tar.gz -C /data
+
+# Restore workspace volume
+docker run --rm -v open-webui-workspace:/data -v $(pwd):/backup alpine tar xzf /backup/open-webui-workspace-backup.tar.gz -C /data
+```
+
+#### Option 2: Bind Mounts (Custom Paths)
+
+If you prefer to store data in specific directories on your host:
+
+1. **Set paths in `.env` file:**
+   ```env
+   # Windows (use forward slashes)
+   DATA_VOLUME_PATH=C:/Docker/open-webui/data
+   WORKSPACE_VOLUME_PATH=C:/Docker/open-webui/workspace
+
+   # Linux
+   DATA_VOLUME_PATH=/home/user/Docker/open-webui/data
+   WORKSPACE_VOLUME_PATH=/home/user/Docker/open-webui/workspace
+   ```
+
+2. **Create directories:**
+   ```bash
+   # Linux/Mac
+   mkdir -p /home/user/Docker/open-webui/data
+   mkdir -p /home/user/Docker/open-webui/workspace
+
+   # Windows (PowerShell)
+   New-Item -ItemType Directory -Path "C:\Docker\open-webui\data" -Force
+   New-Item -ItemType Directory -Path "C:\Docker\open-webui\workspace" -Force
+   ```
+
+3. **Edit `compose.yaml`:**
+   - Comment out the named volume lines (lines 10-11)
+   - Uncomment the bind mount lines (lines 13-14)
+
+   ```yaml
+   volumes:
+     # Named volumes (default - portable across systems)
+     # - open-webui-data:/app/backend/data
+     # - open-webui-workspace:/app/backend/workspace
+     # Bind mounts (uncomment and comment above if using custom paths from .env)
+     - ${DATA_VOLUME_PATH}:/app/backend/data
+     - ${WORKSPACE_VOLUME_PATH}:/app/backend/workspace
+     # Temporary directory mount (for code interpreter and temp operations)
+     - /tmp:/tmp
+   ```
+
+4. **Restart the container:**
+   ```bash
+   docker compose down
+   docker compose up -d
+   ```
+
+**Advantages:**
+- Data stored in known, accessible locations
+- Easy to backup with standard tools (rsync, robocopy, etc.)
+- Can share data across multiple containers easily
+
+**Backup bind mounts:**
+```bash
+# Linux/Mac
+tar czf open-webui-backup.tar.gz /home/user/Docker/open-webui/
+
+# Windows (PowerShell with 7-Zip)
+7z a open-webui-backup.7z "C:\Docker\open-webui\"
 ```
 
 ## OAuth/SSO Setup (Authentik)
