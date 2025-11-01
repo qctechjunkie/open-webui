@@ -43,10 +43,6 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
-volumes:
-  open-webui-data:
-  open-webui-workspace:
-
 networks:
   default:
     name: ${NETWORK_NAME:-ollama-network}
