@@ -6,9 +6,9 @@ services:
     ports:
       - "${WEBUI_PORT:-3000}:8080"
     volumes:
-      # - ${DATA_VOLUME_PATH:-open-webui-data}:/app/backend/data
-      # - ${WORKSPACE_VOLUME_PATH:-open-webui-workspace}:/app/backend/workspace
-      # - ${TEMPORARY_VOLUME_PATH:-/tmp}:/tmp
+      - ${DATA_VOLUME_PATH:-open-webui-data}:/app/backend/data
+      - ${WORKSPACE_VOLUME_PATH:-open-webui-workspace}:/app/backend/workspace
+      - ${TEMPORARY_VOLUME_PATH:-/tmp}:/tmp
     environment:
       # Core Configuration
       - WEBUI_SECRET_KEY=${WEBUI_SECRET_KEY}
