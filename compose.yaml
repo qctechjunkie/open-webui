@@ -28,6 +28,11 @@ services:
       - OAUTH_PROVIDER_NAME=${OAUTH_PROVIDER_NAME:-authentik}
       - OPENID_PROVIDER_URL=${OPENID_PROVIDER_URL}
       - OPENID_REDIRECT_URI=${OPENID_REDIRECT_URI}
+      # Allows auto-creation of new users using OAuth. Must be paired with ENABLE_LOGIN_FORM=false.
+      - ENABLE_OAUTH_SIGNUP=${ENABLE_OAUTH_SIGNUP:-false}
+      # Disables user/password login form. Required when ENABLE_OAUTH_SIGNUP=true.
+      - ENABLE_LOGIN_FORM=${ENABLE_LOGIN_FORM:-true}
+      - OAUTH_MERGE_ACCOUNTS_BY_EMAIL=${OAUTH_MERGE_ACCOUNTS_BY_EMAIL:-true}
 
       # Security
       - WEBUI_SESSION_COOKIE_SECURE=${WEBUI_SESSION_COOKIE_SECURE:-true}
