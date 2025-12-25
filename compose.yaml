@@ -6,14 +6,14 @@ services:
     ports:
       - "${WEBUI_PORT:-3000}:8080"
     volumes:
-      - ${DOCKER_DATA_PATH:-open-webui-data}/backend/data:/app/backend/data
-      - ${DOCKER_DATA_PATH:-open-webui-workspace}/backend/data:/app/backend/workspace
+      - ${DOCKER_DATA_PATH:-open-webui-data}/app/backend/data:/app/backend/data
+      - ${DOCKER_DATA_PATH:-open-webui-workspace}/app/backend/workspace:/app/backend/workspace
       - ${DOCKER_DATA_PATH:-/tmp}/tmp:/tmp
     environment:
       # Core Configuration
       - WEBUI_SECRET_KEY=${WEBUI_SECRET_KEY}
       - WEBUI_URL=${WEBUI_URL}
-      - DATA_DIR=${DOCKER_DATA_PATH:-/app/backend/data}/backend/data
+      - DATA_DIR=${DATA_DIR:-/app/backend/data}
 
       # Model Integration
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
