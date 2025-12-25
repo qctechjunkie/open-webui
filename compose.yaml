@@ -55,7 +55,7 @@ services:
 
       # Database Configuration
       # UNCOMMENT WHEN READY TO MIGRATE FROM SQLITE TO POSTGRESQL:
-      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-openwebui_user}:${POSTGRES_PASSWORD}@openwebui-postgres:5432/${POSTGRES_DB:-openwebui}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-openwebui_user}:${POSTGRES_PASSWORD}@openwebui-postgres:5432/${POSTGRES_DB:-openwebui}
 
       # Model Integration
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
