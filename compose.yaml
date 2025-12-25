@@ -86,9 +86,6 @@ services:
       - no-new-privileges:true
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    depends_on:
-      openwebui-postgres:
-        condition: service_healthy
 
 networks:
   default:
