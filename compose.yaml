@@ -1,39 +1,8 @@
 services:
-  # PostgreSQL Database for Open WebUI
-  openwebui-postgres:
-    image: postgres:16-alpine
-    container_name: openwebui-postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-openwebui}
-      POSTGRES_USER: ${POSTGRES_USER:-openwebui_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    volumes:
-      - ${DOCKER_DATA_PATH:-postgres-data}/postgres:/var/lib/postgresql/data
-    shm_size: 256mb
-    command:
-      - "postgres"
-      - "-c"
-      - "max_connections=50"
-      - "-c"
-      - "shared_buffers=256MB"
-      - "-c"
-      - "effective_cache_size=768MB"
-      - "-c"
-      - "maintenance_work_mem=64MB"
-      - "-c"
-      - "checkpoint_completion_target=0.9"
-      - "-c"
-      - "wal_buffers=8MB"
-      - "-c"
-      - "random_page_cost=1.1"
-      - "-c"
-      - "work_mem=5242kB"
-    ports:
-      - "${POSTGRES_PORT:-5432}:5432"
-    security_opt:
-      - no-new-privileges:true
-
+  # ==============================================================
+  # Open WebUI — AI Chat Interface
+  # Web UI: http://<host>:${WEBUI_PORT}
+  # ==============================================================
   open-webui:
     container_name: open-webui
     image: ghcr.io/open-webui/open-webui:${WEBUI_VERSION:-main}
@@ -41,52 +10,48 @@ services:
     ports:
       - "${WEBUI_PORT:-3000}:8080"
     volumes:
-      - ${DOCKER_DATA_PATH:-open-webui-data}/app/backend/data:/app/backend/data
-      - ${DOCKER_DATA_PATH:-open-webui-workspace}/app/backend/workspace:/app/backend/workspace
-      - ${DOCKER_DATA_PATH:-/tmp}/tmp:/tmp
+      - ${DOCKER_DATA_PATH}/app/backend/data:/app/backend/data
+      - ${DOCKER_DATA_PATH}/app/backend/workspace:/app/backend/workspace
+      - ${DOCKER_DATA_PATH}/tmp:/tmp
     environment:
       # Core Configuration
-      - WEBUI_SECRET_KEY=${WEBUI_SECRET_KEY}
-      - WEBUI_URL=${WEBUI_URL}
-      - DATA_DIR=${DATA_DIR:-/app/backend/data}
-
-      # Database Configuration
-      # UNCOMMENT WHEN READY TO MIGRATE FROM SQLITE TO POSTGRESQL:
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-openwebui_user}:${POSTGRES_PASSWORD}@openwebui-postgres:5432/${POSTGRES_DB:-openwebui}
-
+      WEBUI_SECRET_KEY: ${WEBUI_SECRET_KEY:?WEBUI_SECRET_KEY must be set}
+      WEBUI_URL: ${WEBUI_URL:?WEBUI_URL must be set}
+      DATA_DIR: ${DATA_DIR:-/app/backend/data}
+      # Database — Global Shared PostgreSQL
+      DATABASE_URL: postgresql://${OPENWEBUI_DB_USER:?OPENWEBUI_DB_USER must be set}:${OPENWEBUI_DB_PASSWORD:?OPENWEBUI_DB_PASSWORD must be set}@${POSTGRES_HOST:-global-postgres}:5432/${OPENWEBUI_DB:?OPENWEBUI_DB must be set}
       # Model Integration
-      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
-
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
       # Authentication
-      - ENABLE_SIGNUP=${ENABLE_SIGNUP:-false}
-      - DEFAULT_USER_ROLE=${DEFAULT_USER_ROLE:-pending}
-
-      # OAuth/SSO Configuration
-      - OAUTH_CLIENT_ID=${OAUTH_CLIENT_ID}
-      - OAUTH_CLIENT_SECRET=${OAUTH_CLIENT_SECRET}
-      - OAUTH_PROVIDER_NAME=${OAUTH_PROVIDER_NAME:-authentik}
-      - OPENID_PROVIDER_URL=${OPENID_PROVIDER_URL}
-      - OPENID_REDIRECT_URI=${OPENID_REDIRECT_URI}
-      # Allows auto-creation of new users using OAuth. Must be paired with ENABLE_LOGIN_FORM=false.
-      - ENABLE_OAUTH_SIGNUP=${ENABLE_OAUTH_SIGNUP:-false}
-      # Disables user/password login form. Required when ENABLE_OAUTH_SIGNUP=true.
-      - ENABLE_LOGIN_FORM=${ENABLE_LOGIN_FORM:-true}
-      - OAUTH_MERGE_ACCOUNTS_BY_EMAIL=${OAUTH_MERGE_ACCOUNTS_BY_EMAIL:-true}
-
+      ENABLE_SIGNUP: ${ENABLE_SIGNUP:-false}
+      DEFAULT_USER_ROLE: ${DEFAULT_USER_ROLE:-pending}
+      # OAuth/SSO
+      OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID:-}
+      OAUTH_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET:-}
+      OAUTH_PROVIDER_NAME: ${OAUTH_PROVIDER_NAME:-authentik}
+      OPENID_PROVIDER_URL: ${OPENID_PROVIDER_URL:-}
+      OPENID_REDIRECT_URI: ${OPENID_REDIRECT_URI:-}
+      ENABLE_OAUTH_SIGNUP: ${ENABLE_OAUTH_SIGNUP:-false}
+      ENABLE_LOGIN_FORM: ${ENABLE_LOGIN_FORM:-true}
+      OAUTH_MERGE_ACCOUNTS_BY_EMAIL: ${OAUTH_MERGE_ACCOUNTS_BY_EMAIL:-true}
       # Security
-      - WEBUI_SESSION_COOKIE_SECURE=${WEBUI_SESSION_COOKIE_SECURE:-true}
-
+      WEBUI_SESSION_COOKIE_SECURE: ${WEBUI_SESSION_COOKIE_SECURE:-true}
       # Code Interpreter
-      - ENABLE_CODE_INTERPRETER=${ENABLE_CODE_INTERPRETER:-true}
-
-      # RAG Configuration (if needed)
-      - RAG_EMBEDDING_MODEL=${RAG_EMBEDDING_MODEL:-nomic-embed-text}
-      - RAG_FILE_MAX_SIZE=${RAG_FILE_MAX_SIZE:-10}
+      ENABLE_CODE_INTERPRETER: ${ENABLE_CODE_INTERPRETER:-true}
+      # RAG
+      RAG_EMBEDDING_MODEL: ${RAG_EMBEDDING_MODEL:-nomic-embed-text}
+      RAG_FILE_MAX_SIZE: ${RAG_FILE_MAX_SIZE:-10}
     security_opt:
       - no-new-privileges:true
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    networks:
+      - openwebui-internal
+      - postgres-network
 
 networks:
-  default:
-    name: ${NETWORK_NAME:-ollama-network}
+  openwebui-internal:
+    driver: bridge
+  postgres-network:
+    external: true
+    name: ${POSTGRES_NETWORK_NAME:?POSTGRES_NETWORK_NAME must be set}
